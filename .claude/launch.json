@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "photobooth",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["netlify", "dev", "--offline", "--port", "8888", "--no-open"],
+      "port": 8888
+    },
+    {
+      "name": "booth-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8766", "--directory", "public"],
+      "port": 8766
+    }
+  ]
+}

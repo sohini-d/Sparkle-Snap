@@ -1,0 +1,11 @@
+{
+  "name": "sparkle-snap",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^27.10.0"
+  }
+}

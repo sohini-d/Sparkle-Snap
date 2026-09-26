@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparkle Snap Booth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sniglet:wght@400;800&family=Gochi+Hand&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff8fc8;
+    --hot: #ff4fa3;
+    --baby: #ffd6ec;
+    --lav: #c9b6ff;
+    --lav-deep: #8f6bff;
+    --mint: #b8f5e0;
+    --butter: #fff3a8;
+    --ink: #5a2a4d;
+    --paper: #fffdf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Sniglet', system-ui, sans-serif;
+    color: var(--ink);
+    background-color: var(--baby);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,.7) 0 2px, transparent 3px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,.7) 0 2px, transparent 3px),
+      linear-gradient(45deg, #ffc4e4 25%, transparent 25%, transparent 75%, #ffc4e4 75%),
+      linear-gradient(45deg, #ffc4e4 25%, transparent 25%, transparent 75%, #ffc4e4 75%);
+    background-size: 60px 60px, 80px 80px, 40px 40px, 40px 40px;
+    background-position: 0 0, 0 0, 0 0, 20px 20px;
+    padding: 24px 16px 60px;
+    overflow-x: hidden;
+  }
+
+  /* floating sparkles */
+  .sparkle {
+    position: fixed; pointer-events: none; font-size: 22px; opacity: .8;
+    animation: float 6s ease-in-out infinite; z-index: 0;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-18px) rotate(20deg); }
+  }
+
+  header { text-align: center; position: relative; z-index: 1; }
+  h1 {
+    font-family: 'Sniglet', sans-serif; font-weight: 800;
+    font-size: clamp(38px, 8vw, 72px); margin: 0; letter-spacing: 1px;
+    color: #fff;
+    text-shadow: 3px 3px 0 var(--hot), 6px 6px 0 var(--lav-deep);
+  }
+  .tagline {
+    font-family: 'Gochi Hand', cursive; font-size: 22px; margin: 6px 0 22px;
+  }
+  .marquee {
+    max-width: 720px; margin: 0 auto 22px; overflow: hidden; white-space: nowrap;
+    background: var(--ink); color: var(--butter); font-family: 'VT323', monospace;
+    font-size: 20px; border-radius: 999px; padding: 4px 0;
+    border: 3px solid #fff; box-shadow: 0 0 0 3px var(--hot);
+  }
+  .marquee span { display: inline-block; padding-left: 100%; animation: scroll 16s linear infinite; }
+  @keyframes scroll { to { transform: translateX(-100%); } }
+
+  /* retro window */
+  .window {
+    position: relative; z-index: 1;
+    max-width: 720px; margin: 0 auto;
+    background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 8px 8px 0 var(--lav-deep);
+    overflow: hidden;
+  }
+  .titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(90deg, var(--hot), var(--lav-deep));
+    color: #fff; padding: 8px 14px; font-family: 'VT323', monospace; font-size: 22px;
+    border-bottom: 3px solid var(--ink);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); display: block; }
+  .dots i:nth-child(1) { background: var(--butter); }
+  .dots i:nth-child(2) { background: var(--mint); }
+  .dots i:nth-child(3) { background: var(--pink); }
+  .win-body { padding: 20px; }
+
+  /* settings */
+  .settings { display: grid; gap: 16px; }
+  .group label.title {
+    display: block; font-weight: 800; font-size: 18px; margin-bottom: 8px;
+  }
+  .pills { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pill {
+    font-family: 'Sniglet', sans-serif; font-size: 18px;
+    padding: 10px 18px; border-radius: 999px; cursor: pointer;
+    background: var(--paper); color: var(--ink);
+    border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+    transition: transform .1s, box-shadow .1s, background .2s;
+  }
+  .pill:hover { transform: translate(-1px,-1px) rotate(-2deg); }
+  .pill[aria-pressed="true"] { background: var(--pink); color: #fff; }
+  .pill:active { transform: translate(3px,3px); box-shadow: 0 0 0 var(--ink); }
+
+  /* camera */
+  .stage {
+    position: relative; margin: 20px auto 0; aspect-ratio: 4 / 3; width: 100%;
+    border-radius: 16px; overflow: hidden; background: #2b1630;
+    border: 3px solid var(--ink);
+  }
+  video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  .cam-msg {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+    color: #fff; font-family: 'Gochi Hand', cursive; font-size: 24px; padding: 20px;
+  }
+  .countdown {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 150px; font-weight: 800; color: #fff; pointer-events: none;
+    text-shadow: 5px 5px 0 var(--hot), 10px 10px 0 var(--lav-deep);
+  }
+  .countdown.pop { animation: pop .9s ease-out; }
+  @keyframes pop { from { transform: scale(1.6); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1); } }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  .flash.go { animation: flash .45s ease-out; }
+  @keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+  .shot-count {
+    position: absolute; top: 12px; left: 12px; background: var(--butter);
+    border: 2px solid var(--ink); border-radius: 999px; padding: 4px 12px;
+    font-family: 'VT323', monospace; font-size: 20px; display: none;
+  }
+  .corner-sticker { position: absolute; font-size: 34px; pointer-events: none; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 20px; }
+  .big-btn {
+    font-family: 'Sniglet', sans-serif; font-weight: 800; font-size: 22px;
+    padding: 14px 28px; border-radius: 999px; cursor: pointer;
+    background: var(--hot); color: #fff; border: 3px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink); transition: transform .1s, box-shadow .1s;
+  }
+  .big-btn.alt { background: var(--lav); color: var(--ink); }
+  .big-btn.mint { background: var(--mint); color: var(--ink); }
+  .big-btn:hover { transform: translate(-1px,-1px) scale(1.03); }
+  .big-btn:active { transform: translate(4px,4px); box-shadow: 0 0 0 var(--ink); }
+  .big-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  /* result */
+  #result { display: none; text-align: center; }
+  #result h2 { font-family: 'Gochi Hand', cursive; font-size: 34px; margin: 0 0 14px; }
+  .strip-wrap { display: inline-block; transform: rotate(-2deg); animation: develop 1.2s ease-out; }
+  @keyframes develop { from { filter: brightness(2.2) saturate(0); transform: translateY(30px) rotate(-6deg); } to { filter: none; } }
+  #stripCanvas { max-width: 100%; max-height: 72vh; box-shadow: 6px 8px 0 rgba(90,42,77,.35); border-radius: 4px; }
+
+  .tabs { display: inline-flex; border: 3px solid var(--ink); border-radius: 999px; overflow: hidden; margin-bottom: 12px; box-shadow: 3px 3px 0 var(--ink); }
+  .tab {
+    font-family: 'Sniglet', sans-serif; font-size: 17px; padding: 8px 16px; border: 0; cursor: pointer;
+    background: var(--paper); color: var(--ink);
+  }
+  .tab + .tab { border-left: 3px solid var(--ink); }
+  .tab[aria-pressed="true"] { background: var(--lav-deep); color: #fff; }
+  .pills[hidden] { display: none; }
+  .look-desc { font-family: 'Gochi Hand', cursive; font-size: 19px; margin: 10px 0 0; min-height: 1.2em; }
+  .sw {
+    display: inline-block; width: 16px; height: 16px; border-radius: 4px; margin-right: 7px;
+    border: 2px solid var(--ink); vertical-align: -2px;
+  }
+  .stage { transition: aspect-ratio .3s; }
+  .fx { position: absolute; inset: 0; pointer-events: none; }
+  #fxLeak { mix-blend-mode: screen; }
+  .date-stamp {
+    inset: auto 18px 14px auto; font-family: 'VT323', monospace; font-size: 30px; color: #ff9a2e;
+    text-shadow: 0 0 6px rgba(255,120,0,.9);
+  }
+
+  .result-row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: center; }
+  .qr-card {
+    background: var(--paper); border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--hot); padding: 16px; width: 240px; transform: rotate(2deg);
+  }
+  .qr-card.picker { width: 280px; transform: rotate(-1deg); }
+  .frame-pills { flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .frame-pills .pill { text-align: left; font-size: 17px; padding: 8px 14px; }
+  .print-btn { width: 100%; font-size: 20px; }
+  .qr-card[hidden] { display: none; }
+  .strip-wrap.swap { animation: swap .35s ease-out; }
+  @keyframes swap { from { transform: rotate(-2deg) scale(.96); opacity: .4; } to { transform: rotate(-2deg); opacity: 1; } }
+  .qr-title { font-weight: 800; font-size: 20px; line-height: 1.2; margin-bottom: 12px; }
+  .qr-box {
+    width: 200px; height: 200px; margin: 0 auto; background: #fff; padding: 10px;
+    border: 3px dashed var(--pink); border-radius: 12px; display: grid; place-items: center;
+  }
+  .qr-box img, .qr-box canvas { width: 100% !important; height: auto !important; }
+  .qr-wait { font-family: 'Gochi Hand', cursive; font-size: 18px; }
+  .qr-note { font-family: 'Gochi Hand', cursive; font-size: 18px; margin-top: 10px; }
+
+  footer { text-align: center; margin-top: 26px; font-family: 'Gochi Hand', cursive; font-size: 20px; position: relative; z-index: 1; }
+
+  @media (max-width: 520px) {
+    .countdown { font-size: 100px; }
+    .big-btn { font-size: 18px; padding: 12px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✿ sparkle snap ✿</h1>
+  <p class="tagline">strike a pose, bestie ♡ your lil instant photobooth</p>
+  <div class="marquee"><span>★ welcome 2 the cutest booth on the world wide web ★ smile!! ★ peace signs encouraged ★ xoxo ★</span></div>
+</header>
+
+<main class="window">
+  <div class="titlebar">
+    <span>photobooth.exe</span>
+    <div class="dots"><i></i><i></i><i></i></div>
+  </div>
+  <div class="win-body">
+
+    <section id="booth">
+      <div class="settings">
+        <div class="group">
+          <label class="title">📸 how many pics?</label>
+          <div class="pills" data-setting="count">
+            <button class="pill" data-value="2">2 pics</button>
+            <button class="pill" data-value="4" aria-pressed="true">4 pics</button>
+            <button class="pill" data-value="6">6 pics</button>
+          </div>
+        </div>
+        <div class="group">
+          <label class="title">⏱ time between snaps?</label>
+          <div class="pills" data-setting="timer">
+            <button class="pill" data-value="3" aria-pressed="true">3 sec</button>
+            <button class="pill" data-value="5">5 sec</button>
+            <button class="pill" data-value="10">10 sec</button>
+          </div>
+        </div>
+        <div class="group">
+          <label class="title">🎞 pick your look</label>
+          <div class="tabs" id="lookTabs">
+            <button class="tab" data-mode="filter" aria-pressed="true">🌈 filters</button>
+            <button class="tab" data-mode="camera">📷 vintage cameras</button>
+          </div>
+          <div class="pills" data-setting="filter" id="filterPills">
+            <button class="pill" data-value="none" aria-pressed="true">natural</button>
+            <button class="pill" data-value="vintage">vintage</button>
+            <button class="pill" data-value="bw">b&amp;w</button>
+            <button class="pill" data-value="dreamy">dreamy</button>
+            <button class="pill" data-value="glow">y2k glow</button>
+            <button class="pill" data-value="cool">cool film</button>
+          </div>
+          <div class="pills" data-setting="camera" id="cameraPills" hidden>
+            <button class="pill" data-value="instant" aria-pressed="true">instant cam</button>
+            <button class="pill" data-value="instant70">70s instant</button>
+            <button class="pill" data-value="disposable">disposable</button>
+            <button class="pill" data-value="lomo">lomo</button>
+            <button class="pill" data-value="toycam">toy cam</button>
+            <button class="pill" data-value="bwfilm">35mm b&amp;w</button>
+          </div>
+          <p class="look-desc" id="lookDesc"></p>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="fx" id="fxTint"></div>
+        <div class="fx" id="fxVignette"></div>
+        <div class="fx" id="fxLeak"></div>
+        <div class="fx date-stamp" id="fxDate"></div>
+        <div class="cam-msg" id="camMsg">waking up the camera... ✨<br>(click "allow" if your browser asks!)</div>
+        <div class="shot-count" id="shotCount"></div>
+        <div class="countdown" id="countdown"></div>
+        <div class="flash" id="flash"></div>
+        <span class="corner-sticker" style="top:8px;right:12px">💖</span>
+        <span class="corner-sticker" style="bottom:8px;left:12px">⭐</span>
+      </div>
+
+      <div class="actions">
+        <button class="big-btn" id="startBtn" disabled>♡ i'm ready! ♡</button>
+      </div>
+    </section>
+
+    <section id="result">
+      <h2 id="resultTitle">pick your frame! ✧</h2>
+      <div class="result-row">
+        <div class="strip-wrap" id="stripWrap"><canvas id="stripCanvas"></canvas></div>
+        <div class="qr-card picker" id="framePicker">
+          <div class="qr-title">🖼 tap to try<br>each frame!</div>
+          <div class="pills frame-pills" data-setting="frame">
+            <button class="pill" data-value="sparkle" aria-pressed="true"><i class="sw" style="background:#ffd6ec"></i>sparkle</button>
+            <button class="pill" data-value="white"><i class="sw" style="background:#fff"></i>classic white</button>
+            <button class="pill" data-value="black"><i class="sw" style="background:#111"></i>classic black</button>
+            <button class="pill" data-value="polaroids"><i class="sw" style="background:#fff;border-bottom-width:5px"></i>instant prints</button>
+            <button class="pill" data-value="film"><i class="sw" style="background:repeating-linear-gradient(#222 0 3px,#fff 3px 5px)"></i>film strip</button>
+            <button class="pill" data-value="gingham"><i class="sw" style="background:repeating-conic-gradient(#c9b6ff 0 25%,#fff 0 50%) 0 0/8px 8px"></i>gingham</button>
+            <button class="pill" data-value="holo"><i class="sw" style="background:linear-gradient(135deg,#ffd6ec,#c9f0ff,#e6d6ff,#fff3a8)"></i>holo</button>
+          </div>
+          <button class="big-btn print-btn" id="printBtn">✓ print it!</button>
+        </div>
+        <div class="qr-card" id="qrCard" hidden>
+          <div class="qr-title">📱 scan to take<br>ur pics home!</div>
+          <div id="qrBox" class="qr-box"><span class="qr-wait">making ur code... ✨</span></div>
+          <div class="qr-note" id="qrNote">point your phone camera here ♡</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="big-btn mint" id="doneBtn">✓ all done!</button>
+        <button class="big-btn alt" id="retakeBtn">🔁 retake</button>
+      </div>
+      <p class="qr-note" id="clearNote"></p>
+    </section>
+
+  </div>
+</main>
+
+<footer>made with ♡ &amp; glitter · best viewed in 800×600</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  // floating sparkles
+  const sparkleChars = ['✦','✧','♡','★','✿','⋆'];
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('span');
+    s.className = 'sparkle';
+    s.textContent = sparkleChars[i % sparkleChars.length];
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.top = Math.random() * 100 + 'vh';
+    s.style.color = ['#ff4fa3','#8f6bff','#fff','#ff8fc8'][i % 4];
+    s.style.animationDelay = (Math.random() * 5) + 's';
+    document.body.appendChild(s);
+  }
+
+  // ---------- looks: simple filters, or full vintage-camera emulation ----------
+  // aspect: photo shape · filter: CSS colour grade · tint: colour wash · fade: lifted blacks (0-1)
+  // vignette: dark corners (0-1) · grain: film noise · leak: light leak · flash: on-camera flash
+  // blur: soft plastic lens · date: orange date stamp
+  const LOOKS = {
+    none:    { desc: 'just you, as you are ♡', filter: 'none' },
+    vintage: { desc: 'warm & golden, like mom\'s old albums', filter: 'sepia(.45) saturate(1.3) contrast(.95) brightness(1.05)' },
+    bw:      { desc: 'classic black & white', filter: 'grayscale(1) contrast(1.1)' },
+    dreamy:  { desc: 'soft, rosy & glowy', filter: 'saturate(1.4) brightness(1.1) hue-rotate(-10deg)' },
+    glow:    { desc: 'bright, pink & poppy, very 2003', filter: 'brightness(1.12) saturate(1.3) contrast(.95)', tint: 'rgba(255,110,200,.14)' },
+    cool:    { desc: 'cool, minty film tones', filter: 'saturate(.9) contrast(1.05) brightness(1.04)', tint: 'rgba(70,170,200,.13)' },
+
+    instant:    { desc: 'square, soft & creamy, like a 90s instant photo', aspect: 1,
+                  filter: 'sepia(.2) saturate(.9) contrast(.9) brightness(1.08)', tint: 'rgba(255,225,170,.12)', fade: .1, vignette: .35, grain: 10 },
+    instant70:  { desc: 'faded, warm & dreamy, like a 70s folding instant camera', aspect: 1,
+                  filter: 'sepia(.35) saturate(.75) contrast(.85) brightness(1.05)', blur: .6, tint: 'rgba(255,190,140,.16)', fade: .15, vignette: .45, grain: 14 },
+    disposable: { desc: 'punchy flash + that orange date stamp', aspect: 3 / 2,
+                  filter: 'saturate(1.3) contrast(1.2) brightness(1.03)', tint: 'rgba(255,215,120,.07)', flash: true, vignette: .3, grain: 18, date: true },
+    lomo:       { desc: 'super saturated with deep dark corners', aspect: 3 / 2,
+                  filter: 'saturate(1.6) contrast(1.35)', tint: 'rgba(255,150,0,.06)', vignette: .8, grain: 12 },
+    toycam:     { desc: 'square, blurry edges & dreamy light leaks', aspect: 1,
+                  filter: 'saturate(1.2) contrast(1.15)', blur: 1, vignette: .9, leak: true, grain: 16 },
+    bwfilm:     { desc: 'grainy black & white 35mm film', aspect: 3 / 2,
+                  filter: 'grayscale(1) contrast(1.3) brightness(1.02)', fade: .06, vignette: .4, grain: 26 },
+  };
+
+  const settings = { count: 4, timer: 3, lookMode: 'filter', filter: 'none', camera: 'instant', frame: 'sparkle' };
+  const currentLook = () => LOOKS[settings.lookMode === 'camera' ? settings.camera : settings.filter];
+
+  document.querySelectorAll('.pills').forEach(group => {
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('.pill');
+      if (!btn) return;
+      group.querySelectorAll('.pill').forEach(b => b.removeAttribute('aria-pressed'));
+      btn.setAttribute('aria-pressed', 'true');
+      const key = group.dataset.setting;
+      settings[key] = (key === 'count' || key === 'timer') ? Number(btn.dataset.value) : btn.dataset.value;
+      if (key === 'frame') return showFrame();
+      updatePreview();
+    });
+  });
+
+  const lookTabs = document.getElementById('lookTabs');
+  lookTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    lookTabs.querySelectorAll('.tab').forEach(t => t.removeAttribute('aria-pressed'));
+    tab.setAttribute('aria-pressed', 'true');
+    settings.lookMode = tab.dataset.mode;
+    document.getElementById('filterPills').hidden = settings.lookMode !== 'filter';
+    document.getElementById('cameraPills').hidden = settings.lookMode !== 'camera';
+    updatePreview();
+  });
+
+  function dateStampText() {
+    const d = new Date();
+    return `'${String(d.getFullYear()).slice(2)} ${d.getMonth() + 1} ${d.getDate()}`;
+  }
+
+  // Live preview approximates the look with CSS so guests see it before snapping.
+  function updatePreview() {
+    const look = currentLook();
+    document.getElementById('lookDesc').textContent = look.desc;
+    video.style.filter = [look.filter, look.blur ? `blur(${look.blur}px)` : ''].join(' ');
+    stage.style.aspectRatio = String(look.aspect || 4 / 3);
+    document.getElementById('fxTint').style.background = look.tint || 'none';
+    document.getElementById('fxVignette').style.background = look.vignette
+      ? `radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,${look.vignette}) 100%)` : 'none';
+    document.getElementById('fxLeak').style.background = look.leak
+      ? 'radial-gradient(circle at 0% 0%, rgba(255,90,40,.55), transparent 45%), radial-gradient(circle at 100% 100%, rgba(255,200,60,.35), transparent 40%)' : 'none';
+    document.getElementById('fxDate').textContent = look.date ? dateStampText() : '';
+  }
+
+  const video = document.getElementById('video');
+  const stage = document.getElementById('stage');
+  const camMsg = document.getElementById('camMsg');
+  const startBtn = document.getElementById('startBtn');
+  const countdownEl = document.getElementById('countdown');
+  const flashEl = document.getElementById('flash');
+  const shotCountEl = document.getElementById('shotCount');
+  const booth = document.getElementById('booth');
+  const result = document.getElementById('result');
+  const stripCanvas = document.getElementById('stripCanvas');
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+      video.srcObject = stream;
+      camMsg.style.display = 'none';
+      startBtn.disabled = false;
+    } catch (err) {
+      camMsg.innerHTML = 'oh no!! 🥺 couldn\'t reach your camera.<br>check your browser\'s camera permission &amp; refresh ♡';
+    }
+  }
+  startCamera();
+
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  updatePreview();
+
+  function captureFrame() {
+    const look = currentLook();
+    const aspect = look.aspect || 4 / 3;
+    const w = 600, h = Math.round(600 / aspect);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+
+    // crop the video to the look's shape, from the centre
+    const vw = video.videoWidth, vh = video.videoHeight;
+    let sw = vw, sh = vh, sx = 0, sy = 0;
+    if (vw / vh > aspect) { sw = vh * aspect; sx = (vw - sw) / 2; } else { sh = vw / aspect; sy = (vh - sh) / 2; }
+    ctx.save();
+    ctx.filter = [look.filter, look.blur ? `blur(${look.blur}px)` : ''].join(' ').trim() || 'none';
+    ctx.translate(w, 0); ctx.scale(-1, 1); // mirror like the preview
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
+    ctx.restore();
+
+    applyEffects(ctx, w, h, look);
+    return c;
+  }
+
+  function applyEffects(ctx, w, h, look) {
+    if (look.tint) {
+      ctx.fillStyle = look.tint;
+      ctx.fillRect(0, 0, w, h);
+    }
+    if (look.fade) { // lift the blacks like old faded prints
+      const f = Math.round(look.fade * 255);
+      ctx.globalCompositeOperation = 'lighten';
+      ctx.fillStyle = `rgb(${f},${Math.max(0, f - 6)},${Math.max(0, f - 14)})`;
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    if (look.flash) { // hot spot from a little on-camera flash
+      const g = ctx.createRadialGradient(w / 2, h * .45, 0, w / 2, h * .45, w * .6);
+      g.addColorStop(0, 'rgba(255,255,255,.22)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    if (look.leak) { // light leak from a random corner
+      const cx = Math.random() < .5 ? 0 : w, cy = Math.random() < .5 ? 0 : h;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * .6);
+      g.addColorStop(0, 'rgba(255,90,40,.6)');
+      g.addColorStop(.5, 'rgba(255,180,60,.25)');
+      g.addColorStop(1, 'rgba(255,180,60,0)');
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    if (look.vignette) {
+      const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * .3, w / 2, h / 2, Math.hypot(w, h) / 2);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, `rgba(0,0,0,${look.vignette})`);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    }
+    if (look.grain) {
+      const img = ctx.getImageData(0, 0, w, h), d = img.data, a = look.grain;
+      for (let i = 0; i < d.length; i += 4) {
+        const n = (Math.random() - .5) * a * 2;
+        d[i] += n; d[i + 1] += n; d[i + 2] += n;
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+    if (look.date) {
+      ctx.font = `${Math.round(h * .09)}px VT323, monospace`;
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ff9a2e';
+      ctx.shadowColor = 'rgba(255,110,0,.9)'; ctx.shadowBlur = 8;
+      ctx.fillText(dateStampText(), w - 24, h - 22);
+      ctx.shadowBlur = 0; ctx.textAlign = 'left';
+    }
+  }
+
+  startBtn.addEventListener('click', async () => {
+    startBtn.disabled = true;
+    document.querySelectorAll('.pill').forEach(p => p.disabled = true);
+    const shots = [];
+    shotCountEl.style.display = 'block';
+    for (let i = 0; i < settings.count; i++) {
+      shotCountEl.textContent = `pic ${i + 1} of ${settings.count}`;
+      for (let t = settings.timer; t > 0; t--) {
+        countdownEl.textContent = t;
+        countdownEl.classList.remove('pop'); void countdownEl.offsetWidth; countdownEl.classList.add('pop');
+        await wait(1000);
+      }
+      countdownEl.textContent = '';
+      shots.push(captureFrame());
+      flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
+      await wait(450);
+    }
+    shotCountEl.style.display = 'none';
+    lastShots = shots;
+    document.querySelectorAll('.pill').forEach(p => p.disabled = false);
+    showPicker();
+  });
+
+  // ---------- choose a frame with your real photos, then print ----------
+  let lastShots = null;
+  const framePicker = document.getElementById('framePicker');
+  const qrCard = document.getElementById('qrCard');
+  const resultTitle = document.getElementById('resultTitle');
+  const stripWrap = document.getElementById('stripWrap');
+
+  function showPicker() {
+    buildStrip(lastShots);
+    resultTitle.textContent = 'pick your frame! ✧';
+    framePicker.hidden = false;
+    qrCard.hidden = true;
+    booth.style.display = 'none';
+    result.style.display = 'block';
+    startClearCountdown(PICK_SECONDS);
+  }
+
+  function showFrame() {
+    if (!lastShots || framePicker.hidden) return;
+    buildStrip(lastShots);
+    stripWrap.classList.remove('swap'); void stripWrap.offsetWidth; stripWrap.classList.add('swap');
+    startClearCountdown(PICK_SECONDS); // still here and choosing, so give them more time
+  }
+
+  document.getElementById('printBtn').addEventListener('click', () => {
+    framePicker.hidden = true;
+    qrCard.hidden = false;
+    resultTitle.textContent = 'your pics are developing... ✧';
+    uploadAndShowQr();
+    startClearCountdown(CLEAR_AFTER_SECONDS);
+  });
+
+  const qrBox = document.getElementById('qrBox');
+  const qrNote = document.getElementById('qrNote');
+
+  // The booth key stops strangers from uploading to your storage.
+  // Open the booth once as  https://your-site/?key=YOUR_KEY  and it's remembered on that device.
+  function boothKey() {
+    const params = new URLSearchParams(location.search);
+    let key = params.get('key');
+    try {
+      if (key) {
+        localStorage.setItem('boothKey', key);
+        history.replaceState(null, '', location.pathname);
+      } else {
+        key = localStorage.getItem('boothKey');
+      }
+    } catch (e) {}
+    return key || '';
+  }
+  const BOOTH_KEY = boothKey();
+
+  let guestSession = 0;
+
+  async function uploadAndShowQr() {
+    const mySession = guestSession;
+    qrBox.innerHTML = '<span class="qr-wait">making ur code... ✨</span>';
+    qrNote.textContent = 'point your phone camera here ♡';
+    try {
+      let blob = await new Promise(r => stripCanvas.toBlob(r, 'image/jpeg', 0.9));
+      if (blob.size > 4.5 * 1024 * 1024) blob = await new Promise(r => stripCanvas.toBlob(r, 'image/jpeg', 0.75));
+      const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'X-Booth-Key': BOOTH_KEY }, body: blob });
+      if (!res.ok) throw new Error(await res.text());
+      const { url } = await res.json();
+      if (mySession !== guestSession) return; // screen was cleared meanwhile
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, { text: url, width: 400, height: 400, colorDark: '#5a2a4d', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      qrBox.title = url;
+    } catch (err) {
+      if (mySession !== guestSession) return;
+      qrBox.innerHTML = '<span class="qr-wait">🥺 couldn\'t make a code</span>';
+      qrNote.textContent = 'ask the booth host for help ♡';
+    }
+  }
+
+  // ---------- frame styles for the finished print ----------
+  const FRAMES = {
+    sparkle: { layout: 'strip', bg: '#fffdf8', dots: '#ffd6ec', photoBorder: '#5a2a4d', stickers: ['💖', '⭐', '🎀'],
+               title: '✿ sparkle snap ✿', titleFont: '800 56px Sniglet, sans-serif', titleColor: '#ff4fa3',
+               subFont: '36px "Gochi Hand", cursive', subColor: '#8f6bff', sub: d => `${d}  ♡  xoxo` },
+    white:   { layout: 'strip', bg: '#ffffff',
+               title: 'sparkle snap', titleFont: '400 44px Sniglet, sans-serif', titleColor: '#222',
+               subFont: '30px "Gochi Hand", cursive', subColor: '#888', sub: d => d },
+    black:   { layout: 'strip', bg: '#111111',
+               title: 'sparkle snap', titleFont: '400 44px Sniglet, sans-serif', titleColor: '#f5f5f5',
+               subFont: '30px "Gochi Hand", cursive', subColor: '#9a9a9a', sub: d => d },
+    gingham: { layout: 'strip', bg: '#ffffff', gingham: 'rgba(201,182,255,.45)', photoMat: '#ffffff', stickers: ['🎀', '🍓', '🌷'],
+               title: '✿ sparkle snap ✿', titleFont: '800 54px Sniglet, sans-serif', titleColor: '#8f6bff',
+               subFont: '36px "Gochi Hand", cursive', subColor: '#5a2a4d', sub: d => `${d}  ♡  besties` },
+    holo:    { layout: 'strip', holo: true, photoMat: '#ffffff', stickers: ['⭐', '💿', '🦋'],
+               title: '★ sparkle snap ★', titleFont: '800 56px Sniglet, sans-serif', titleColor: '#ffffff', titleShadow: '#ff4fa3',
+               subFont: '36px "Gochi Hand", cursive', subColor: '#5a2a4d', sub: d => `${d}  ✦  4ever` },
+    film:    { layout: 'film' },
+    polaroids: { layout: 'polaroids' },
+  };
+
+  function buildStrip(shots) {
+    const frame = FRAMES[settings.frame];
+    const date = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    if (frame.layout === 'film') return buildFilm(shots, date);
+    if (frame.layout === 'polaroids') return buildPolaroids(shots, date);
+
+    const cols = shots.length === 6 ? 2 : 1;
+    const rows = shots.length / cols;
+    const pw = shots[0].width, ph = shots[0].height;
+    const gap = 28, side = 40, top = 40, bottom = 150;
+    const W = side * 2 + cols * pw + (cols - 1) * gap;
+    const H = top + rows * ph + (rows - 1) * gap + bottom;
+    stripCanvas.width = W; stripCanvas.height = H;
+    const ctx = stripCanvas.getContext('2d');
+
+    // background
+    if (frame.holo) {
+      const g = ctx.createLinearGradient(0, 0, W, H);
+      ['#ffd6ec', '#c9f0ff', '#e6d6ff', '#fff3a8', '#ffd6ec'].forEach((c, i, a) => g.addColorStop(i / (a.length - 1), c));
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '26px serif';
+      for (let i = 0; i < 40; i++) ctx.fillText(i % 2 ? '✦' : '✧', Math.random() * W, Math.random() * H);
+    } else {
+      ctx.fillStyle = frame.bg; ctx.fillRect(0, 0, W, H);
+    }
+    if (frame.gingham) {
+      ctx.fillStyle = frame.gingham;
+      for (let x = 0; x < W; x += 48) ctx.fillRect(x, 0, 24, H);
+      for (let y = 0; y < H; y += 48) ctx.fillRect(0, y, W, 24);
+    }
+    if (frame.dots) {
+      ctx.fillStyle = frame.dots;
+      for (let x = 12; x < W; x += 24) {
+        ctx.beginPath(); ctx.arc(x, 12, 4, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, H - 12, 4, 0, 7); ctx.fill();
+      }
+    }
+
+    shots.forEach((shot, i) => {
+      const x = side + (i % cols) * (pw + gap), y = top + Math.floor(i / cols) * (ph + gap);
+      if (frame.photoMat) { ctx.fillStyle = frame.photoMat; ctx.fillRect(x - 10, y - 10, pw + 20, ph + 20); }
+      ctx.drawImage(shot, x, y, pw, ph);
+      if (frame.photoBorder) { ctx.strokeStyle = frame.photoBorder; ctx.lineWidth = 3; ctx.strokeRect(x, y, pw, ph); }
+    });
+
+    if (frame.stickers) {
+      ctx.font = '54px serif';
+      ctx.fillText(frame.stickers[0], side - 20, top + 30);
+      ctx.fillText(frame.stickers[1], W - side - 36, top + ph - 10);
+      if (rows > 1) ctx.fillText(frame.stickers[2], W - side - 50, top + ph + gap + 40);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.font = frame.titleFont; ctx.fillStyle = frame.titleColor;
+    if (frame.titleShadow) { ctx.shadowColor = frame.titleShadow; ctx.shadowOffsetX = ctx.shadowOffsetY = 4; }
+    ctx.fillText(frame.title, W / 2, H - bottom + 72);
+    ctx.shadowColor = 'transparent'; ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+    ctx.font = frame.subFont; ctx.fillStyle = frame.subColor;
+    ctx.fillText(frame.sub(date), W / 2, H - bottom + 118);
+    ctx.textAlign = 'left';
+  }
+
+  // Old-school 35mm film strip with sprocket holes and orange edge print.
+  function buildFilm(shots, date) {
+    const cols = shots.length === 6 ? 2 : 1;
+    const rows = shots.length / cols;
+    const pw = shots[0].width, ph = shots[0].height;
+    const rail = 70, gap = 24, top = 50, bottom = 130;
+    const colW = rail * 2 + pw;
+    const W = cols * colW, H = top + rows * ph + (rows - 1) * gap + bottom;
+    stripCanvas.width = W; stripCanvas.height = H;
+    const ctx = stripCanvas.getContext('2d');
+
+    ctx.fillStyle = '#161412'; ctx.fillRect(0, 0, W, H);
+    for (let c = 0; c < cols; c++) {
+      const x0 = c * colW;
+      ctx.fillStyle = '#f4efe6';
+      for (let y = 18; y < H - 18; y += 44) {
+        roundRect(ctx, x0 + 22, y, 28, 20, 4);
+        roundRect(ctx, x0 + colW - 50, y, 28, 20, 4);
+      }
+    }
+    ctx.font = '26px VT323, monospace';
+    shots.forEach((shot, i) => {
+      const c = i % cols, r = Math.floor(i / cols);
+      const x = c * colW + rail, y = top + r * (ph + gap);
+      ctx.drawImage(shot, x, y, pw, ph);
+      ctx.fillStyle = '#ff9a2e';
+      ctx.fillText(`${i + 1}  ▸ ${i + 1}A`, x + 4, y - 10);
+    });
+    ctx.fillStyle = '#161412'; // keep the caption clear of the sprocket holes
+    ctx.fillRect(W / 2 - 230, H - bottom + 18, 460, 96);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#ff9a2e';
+    ctx.font = '48px VT323, monospace';
+    ctx.fillText('SPARKLE SNAP 400  ▸▸', W / 2, H - bottom + 62);
+    ctx.font = '32px VT323, monospace';
+    ctx.fillText(date.toUpperCase(), W / 2, H - bottom + 100);
+    ctx.textAlign = 'left';
+  }
+
+  // Each photo as its own little instant print, taped onto a pink board.
+  function buildPolaroids(shots, date) {
+    const cols = shots.length === 2 ? 1 : 2;
+    const rows = Math.ceil(shots.length / cols);
+    const pw = shots[0].width, ph = shots[0].height;
+    const pad = 26, chin = 110, cardW = pw + pad * 2, cardH = ph + pad + chin;
+    const gap = 50, margin = 60, bottom = 140;
+    const W = margin * 2 + cols * cardW + (cols - 1) * gap;
+    const H = margin + rows * cardH + (rows - 1) * gap + bottom;
+    stripCanvas.width = W; stripCanvas.height = H;
+    const ctx = stripCanvas.getContext('2d');
+
+    ctx.fillStyle = '#ffe3f1'; ctx.fillRect(0, 0, W, H);
+    const confetti = ['#ff8fc8', '#c9b6ff', '#b8f5e0', '#fff3a8', '#ffffff'];
+    for (let i = 0; i < 120; i++) {
+      ctx.fillStyle = confetti[i % confetti.length];
+      ctx.beginPath(); ctx.arc(Math.random() * W, Math.random() * H, 3 + Math.random() * 5, 0, 7); ctx.fill();
+    }
+
+    const notes = ['cuties ♡', 'besties!', 'smile :)', 'xoxo', '4ever ✿', 'so cute!!'];
+    shots.forEach((shot, i) => {
+      const cx = margin + (i % cols) * (cardW + gap) + cardW / 2;
+      const cy = margin + Math.floor(i / cols) * (cardH + gap) + cardH / 2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(((i % 2 ? 1 : -1) * (1.2 + Math.random() * 1.8)) * Math.PI / 180);
+      ctx.shadowColor = 'rgba(90,42,77,.3)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+      ctx.fillStyle = '#fffdf8'; ctx.fillRect(-cardW / 2, -cardH / 2, cardW, cardH);
+      ctx.shadowColor = 'transparent';
+      ctx.drawImage(shot, -cardW / 2 + pad, -cardH / 2 + pad, pw, ph);
+      ctx.fillStyle = '#5a2a4d'; ctx.font = '44px "Gochi Hand", cursive'; ctx.textAlign = 'center';
+      ctx.fillText(notes[i % notes.length], 0, cardH / 2 - chin / 2 + 14);
+      ctx.fillStyle = 'rgba(255,143,200,.7)'; // washi tape
+      ctx.rotate(-4 * Math.PI / 180);
+      ctx.fillRect(-70, -cardH / 2 - 18, 140, 36);
+      ctx.restore();
+    });
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff4fa3'; ctx.font = '800 56px Sniglet, sans-serif';
+    ctx.fillText('✿ sparkle snap ✿', W / 2, H - bottom + 70);
+    ctx.fillStyle = '#8f6bff'; ctx.font = '36px "Gochi Hand", cursive';
+    ctx.fillText(`${date}  ♡  xoxo`, W / 2, H - bottom + 114);
+    ctx.textAlign = 'left';
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
+    ctx.fill();
+  }
+
+  // Privacy: the result screen wipes itself so the next guest can never
+  // see or scan the previous guest's photos.
+  const CLEAR_AFTER_SECONDS = 60; // after printing
+  const PICK_SECONDS = 90;        // while choosing a frame, restarts on every tap
+  const clearNote = document.getElementById('clearNote');
+  let clearTimer = null;
+
+  function startClearCountdown(seconds) {
+    let left = seconds;
+    clearInterval(clearTimer);
+    clearNote.textContent = `this screen clears itself in ${left}s for privacy ♡`;
+    clearTimer = setInterval(() => {
+      left--;
+      clearNote.textContent = `this screen clears itself in ${left}s for privacy ♡`;
+      if (left <= 0) resetBooth();
+    }, 1000);
+  }
+
+  function resetBooth() {
+    guestSession++;
+    lastShots = null;
+    clearInterval(clearTimer);
+    clearNote.textContent = '';
+    qrBox.innerHTML = '';
+    qrBox.removeAttribute('title');
+    const ctx = stripCanvas.getContext('2d');
+    ctx.clearRect(0, 0, stripCanvas.width, stripCanvas.height);
+    stripCanvas.width = stripCanvas.height = 0;
+    result.style.display = 'none';
+    booth.style.display = 'block';
+    startBtn.disabled = false;
+  }
+
+  document.getElementById('doneBtn').addEventListener('click', resetBooth);
+  document.getElementById('retakeBtn').addEventListener('click', resetBooth);
+</script>
+</body>
+</html>

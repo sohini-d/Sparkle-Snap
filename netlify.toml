@@ -1,0 +1,7 @@
+[build]
+  command = "echo no build needed"
+  publish = "public"
+  functions = "netlify/functions"
+
+[dev]
+  framework = "#static"

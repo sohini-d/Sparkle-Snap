@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparkle Snap Booth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sniglet:wght@400;800&family=Gochi+Hand&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff8fc8;
+    --hot: #ff4fa3;
+    --baby: #ffd6ec;
+    --lav: #c9b6ff;
+    --lav-deep: #8f6bff;
+    --mint: #b8f5e0;
+    --butter: #fff3a8;
+    --ink: #5a2a4d;
+    --paper: #fffdf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Sniglet', system-ui, sans-serif;
+    color: var(--ink);
+    background-color: var(--baby);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,.7) 0 2px, transparent 3px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,.7) 0 2px, transparent 3px),
+      linear-gradient(45deg, #ffc4e4 25%, transparent 25%, transparent 75%, #ffc4e4 75%),
+      linear-gradient(45deg, #ffc4e4 25%, transparent 25%, transparent 75%, #ffc4e4 75%);
+    background-size: 60px 60px, 80px 80px, 40px 40px, 40px 40px;
+    background-position: 0 0, 0 0, 0 0, 20px 20px;
+    padding: 24px 16px 60px;
+    overflow-x: hidden;
+  }
+
+  /* floating sparkles */
+  .sparkle {
+    position: fixed; pointer-events: none; font-size: 22px; opacity: .8;
+    animation: float 6s ease-in-out infinite; z-index: 0;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-18px) rotate(20deg); }
+  }
+
+  header { text-align: center; position: relative; z-index: 1; }
+  h1 {
+    font-family: 'Sniglet', sans-serif; font-weight: 800;
+    font-size: clamp(38px, 8vw, 72px); margin: 0; letter-spacing: 1px;
+    color: #fff;
+    text-shadow: 3px 3px 0 var(--hot), 6px 6px 0 var(--lav-deep);
+  }
+  .tagline {
+    font-family: 'Gochi Hand', cursive; font-size: 22px; margin: 6px 0 22px;
+  }
+  .marquee {
+    max-width: 720px; margin: 0 auto 22px; overflow: hidden; white-space: nowrap;
+    background: var(--ink); color: var(--butter); font-family: 'VT323', monospace;
+    font-size: 20px; border-radius: 999px; padding: 4px 0;
+    border: 3px solid #fff; box-shadow: 0 0 0 3px var(--hot);
+  }
+  .marquee span { display: inline-block; padding-left: 100%; animation: scroll 16s linear infinite; }
+  @keyframes scroll { to { transform: translateX(-100%); } }
+
+  /* retro window */
+  .window {
+    position: relative; z-index: 1;
+    max-width: 720px; margin: 0 auto;
+    background: #fff; border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 8px 8px 0 var(--lav-deep);
+    overflow: hidden;
+  }
+  .titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(90deg, var(--hot), var(--lav-deep));
+    color: #fff; padding: 8px 14px; font-family: 'VT323', monospace; font-size: 22px;
+    border-bottom: 3px solid var(--ink);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); display: block; }
+  .dots i:nth-child(1) { background: var(--butter); }
+  .dots i:nth-child(2) { background: var(--mint); }
+  .dots i:nth-child(3) { background: var(--pink); }
+  .win-body { padding: 20px; }
+
+  /* settings */
+  .settings { display: grid; gap: 16px; }
+  .group label.title {
+    display: block; font-weight: 800; font-size: 18px; margin-bottom: 8px;
+  }
+  .pills { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pill {
+    font-family: 'Sniglet', sans-serif; font-size: 18px;
+    padding: 10px 18px; border-radius: 999px; cursor: pointer;
+    background: var(--paper); color: var(--ink);
+    border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+    transition: transform .1s, box-shadow .1s, background .2s;
+  }
+  .pill:hover { transform: translate(-1px,-1px) rotate(-2deg); }
+  .pill[aria-pressed="true"] { background: var(--pink); color: #fff; }
+  .pill:active { transform: translate(3px,3px); box-shadow: 0 0 0 var(--ink); }
+
+  /* camera */
+  .stage {
+    position: relative; margin: 20px auto 0; aspect-ratio: 4 / 3; width: 100%;
+    border-radius: 16px; overflow: hidden; background: #2b1630;
+    border: 3px solid var(--ink);
+  }
+  video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  .stage.bw video { filter: grayscale(1) contrast(1.1); }
+  .stage.vintage video { filter: sepia(.45) saturate(1.3) contrast(.95) brightness(1.05); }
+  .stage.dreamy video { filter: saturate(1.4) brightness(1.1) hue-rotate(-10deg) blur(.3px); }
+  .cam-msg {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+    color: #fff; font-family: 'Gochi Hand', cursive; font-size: 24px; padding: 20px;
+  }
+  .countdown {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 150px; font-weight: 800; color: #fff; pointer-events: none;
+    text-shadow: 5px 5px 0 var(--hot), 10px 10px 0 var(--lav-deep);
+  }
+  .countdown.pop { animation: pop .9s ease-out; }
+  @keyframes pop { from { transform: scale(1.6); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1); } }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  .flash.go { animation: flash .45s ease-out; }
+  @keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+  .shot-count {
+    position: absolute; top: 12px; left: 12px; background: var(--butter);
+    border: 2px solid var(--ink); border-radius: 999px; padding: 4px 12px;
+    font-family: 'VT323', monospace; font-size: 20px; display: none;
+  }
+  .corner-sticker { position: absolute; font-size: 34px; pointer-events: none; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 20px; }
+  .big-btn {
+    font-family: 'Sniglet', sans-serif; font-weight: 800; font-size: 22px;
+    padding: 14px 28px; border-radius: 999px; cursor: pointer;
+    background: var(--hot); color: #fff; border: 3px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink); transition: transform .1s, box-shadow .1s;
+  }
+  .big-btn.alt { background: var(--lav); color: var(--ink); }
+  .big-btn.mint { background: var(--mint); color: var(--ink); }
+  .big-btn:hover { transform: translate(-1px,-1px) scale(1.03); }
+  .big-btn:active { transform: translate(4px,4px); box-shadow: 0 0 0 var(--ink); }
+  .big-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  /* result */
+  #result { display: none; text-align: center; }
+  #result h2 { font-family: 'Gochi Hand', cursive; font-size: 34px; margin: 0 0 14px; }
+  .strip-wrap { display: inline-block; transform: rotate(-2deg); animation: develop 1.2s ease-out; }
+  @keyframes develop { from { filter: brightness(2.2) saturate(0); transform: translateY(30px) rotate(-6deg); } to { filter: none; } }
+  #stripCanvas { max-width: 100%; max-height: 72vh; box-shadow: 6px 8px 0 rgba(90,42,77,.35); border-radius: 4px; }
+
+  .result-row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: center; }
+  .qr-card {
+    background: var(--paper); border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--hot); padding: 16px; width: 240px; transform: rotate(2deg);
+  }
+  .qr-title { font-weight: 800; font-size: 20px; line-height: 1.2; margin-bottom: 12px; }
+  .qr-box {
+    width: 200px; height: 200px; margin: 0 auto; background: #fff; padding: 10px;
+    border: 3px dashed var(--pink); border-radius: 12px; display: grid; place-items: center;
+  }
+  .qr-box img, .qr-box canvas { width: 100% !important; height: auto !important; }
+  .qr-wait { font-family: 'Gochi Hand', cursive; font-size: 18px; }
+  .qr-note { font-family: 'Gochi Hand', cursive; font-size: 18px; margin-top: 10px; }
+
+  footer { text-align: center; margin-top: 26px; font-family: 'Gochi Hand', cursive; font-size: 20px; position: relative; z-index: 1; }
+
+  @media (max-width: 520px) {
+    .countdown { font-size: 100px; }
+    .big-btn { font-size: 18px; padding: 12px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✿ sparkle snap ✿</h1>
+  <p class="tagline">strike a pose, bestie ♡ your lil polaroid photobooth</p>
+  <div class="marquee"><span>★ welcome 2 the cutest booth on the world wide web ★ smile!! ★ peace signs encouraged ★ xoxo ★</span></div>
+</header>
+
+<main class="window">
+  <div class="titlebar">
+    <span>photobooth.exe</span>
+    <div class="dots"><i></i><i></i><i></i></div>
+  </div>
+  <div class="win-body">
+
+    <section id="booth">
+      <div class="settings">
+        <div class="group">
+          <label class="title">📸 how many pics?</label>
+          <div class="pills" data-setting="count">
+            <button class="pill" data-value="2">2 pics</button>
+            <button class="pill" data-value="4" aria-pressed="true">4 pics</button>
+            <button class="pill" data-value="6">6 pics</button>
+          </div>
+        </div>
+        <div class="group">
+          <label class="title">⏱ time between snaps?</label>
+          <div class="pills" data-setting="timer">
+            <button class="pill" data-value="3" aria-pressed="true">3 sec</button>
+            <button class="pill" data-value="5">5 sec</button>
+            <button class="pill" data-value="10">10 sec</button>
+          </div>
+        </div>
+        <div class="group">
+          <label class="title">🌈 filter vibe</label>
+          <div class="pills" data-setting="filter">
+            <button class="pill" data-value="none" aria-pressed="true">natural</button>
+            <button class="pill" data-value="vintage">vintage</button>
+            <button class="pill" data-value="bw">b&amp;w</button>
+            <button class="pill" data-value="dreamy">dreamy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="cam-msg" id="camMsg">waking up the camera... ✨<br>(click "allow" if your browser asks!)</div>
+        <div class="shot-count" id="shotCount"></div>
+        <div class="countdown" id="countdown"></div>
+        <div class="flash" id="flash"></div>
+        <span class="corner-sticker" style="top:8px;right:12px">💖</span>
+        <span class="corner-sticker" style="bottom:8px;left:12px">⭐</span>
+      </div>
+
+      <div class="actions">
+        <button class="big-btn" id="startBtn" disabled>♡ i'm ready! ♡</button>
+      </div>
+    </section>
+
+    <section id="result">
+      <h2>your pics are developing... ✧</h2>
+      <div class="result-row">
+        <div class="strip-wrap"><canvas id="stripCanvas"></canvas></div>
+        <div class="qr-card">
+          <div class="qr-title">📱 scan to take<br>ur pics home!</div>
+          <div id="qrBox" class="qr-box"><span class="qr-wait">making ur code... ✨</span></div>
+          <div class="qr-note" id="qrNote">point your phone camera here ♡</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="big-btn" id="downloadBtn">💾 save it</button>
+        <button class="big-btn alt" id="retakeBtn">🔁 retake</button>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>made with ♡ &amp; glitter · best viewed in 800×600</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  // floating sparkles
+  const sparkleChars = ['✦','✧','♡','★','✿','⋆'];
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('span');
+    s.className = 'sparkle';
+    s.textContent = sparkleChars[i % sparkleChars.length];
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.top = Math.random() * 100 + 'vh';
+    s.style.color = ['#ff4fa3','#8f6bff','#fff','#ff8fc8'][i % 4];
+    s.style.animationDelay = (Math.random() * 5) + 's';
+    document.body.appendChild(s);
+  }
+
+  const settings = { count: 4, timer: 3, filter: 'none' };
+  document.querySelectorAll('.pills').forEach(group => {
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('.pill');
+      if (!btn) return;
+      group.querySelectorAll('.pill').forEach(b => b.removeAttribute('aria-pressed'));
+      btn.setAttribute('aria-pressed', 'true');
+      const key = group.dataset.setting;
+      settings[key] = key === 'filter' ? btn.dataset.value : Number(btn.dataset.value);
+      if (key === 'filter') stage.className = 'stage ' + (settings.filter === 'none' ? '' : settings.filter);
+    });
+  });
+
+  const video = document.getElementById('video');
+  const stage = document.getElementById('stage');
+  const camMsg = document.getElementById('camMsg');
+  const startBtn = document.getElementById('startBtn');
+  const countdownEl = document.getElementById('countdown');
+  const flashEl = document.getElementById('flash');
+  const shotCountEl = document.getElementById('shotCount');
+  const booth = document.getElementById('booth');
+  const result = document.getElementById('result');
+  const stripCanvas = document.getElementById('stripCanvas');
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+      video.srcObject = stream;
+      camMsg.style.display = 'none';
+      startBtn.disabled = false;
+    } catch (err) {
+      camMsg.innerHTML = 'oh no!! 🥺 couldn\'t reach your camera.<br>check your browser\'s camera permission &amp; refresh ♡';
+    }
+  }
+  startCamera();
+
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const filterCss = { none: 'none', bw: 'grayscale(1) contrast(1.1)', vintage: 'sepia(.45) saturate(1.3) contrast(.95) brightness(1.05)', dreamy: 'saturate(1.4) brightness(1.1) hue-rotate(-10deg)' };
+
+  function captureFrame() {
+    const w = 600, h = 450; // 4:3
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    // crop video to 4:3 center
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const target = 4 / 3;
+    let sw = vw, sh = vh, sx = 0, sy = 0;
+    if (vw / vh > target) { sw = vh * target; sx = (vw - sw) / 2; } else { sh = vw / target; sy = (vh - sh) / 2; }
+    ctx.filter = filterCss[settings.filter];
+    ctx.translate(w, 0); ctx.scale(-1, 1); // mirror like the preview
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
+    return c;
+  }
+
+  startBtn.addEventListener('click', async () => {
+    startBtn.disabled = true;
+    document.querySelectorAll('.pill').forEach(p => p.disabled = true);
+    const shots = [];
+    shotCountEl.style.display = 'block';
+    for (let i = 0; i < settings.count; i++) {
+      shotCountEl.textContent = `pic ${i + 1} of ${settings.count}`;
+      for (let t = settings.timer; t > 0; t--) {
+        countdownEl.textContent = t;
+        countdownEl.classList.remove('pop'); void countdownEl.offsetWidth; countdownEl.classList.add('pop');
+        await wait(1000);
+      }
+      countdownEl.textContent = '';
+      shots.push(captureFrame());
+      flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
+      await wait(450);
+    }
+    shotCountEl.style.display = 'none';
+    buildStrip(shots);
+    booth.style.display = 'none';
+    result.style.display = 'block';
+    document.querySelectorAll('.pill').forEach(p => p.disabled = false);
+    uploadAndShowQr();
+  });
+
+  const qrBox = document.getElementById('qrBox');
+  const qrNote = document.getElementById('qrNote');
+
+  async function uploadAndShowQr() {
+    qrBox.innerHTML = '<span class="qr-wait">making ur code... ✨</span>';
+    qrNote.textContent = 'point your phone camera here ♡';
+    try {
+      const blob = await new Promise(r => stripCanvas.toBlob(r, 'image/png'));
+      const res = await fetch('/upload', { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: blob });
+      if (!res.ok) throw new Error(await res.text());
+      const { url } = await res.json();
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, { text: url, width: 400, height: 400, colorDark: '#5a2a4d', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      qrBox.title = url;
+    } catch (err) {
+      qrBox.innerHTML = '<span class="qr-wait">🥺 couldn\'t make a code</span>';
+      qrNote.textContent = 'use "save it" instead!';
+    }
+  }
+
+  function buildStrip(shots) {
+    const cols = shots.length === 6 ? 2 : 1;
+    const rows = shots.length / cols;
+    const pw = 600, ph = 450, gap = 28, side = 40, top = 40, bottom = 150;
+    const W = side * 2 + cols * pw + (cols - 1) * gap;
+    const H = top + rows * ph + (rows - 1) * gap + bottom;
+    stripCanvas.width = W; stripCanvas.height = H;
+    const ctx = stripCanvas.getContext('2d');
+
+    // paper
+    ctx.fillStyle = '#fffdf8';
+    ctx.fillRect(0, 0, W, H);
+    // subtle pink dots border
+    ctx.fillStyle = '#ffd6ec';
+    for (let x = 12; x < W; x += 24) { ctx.beginPath(); ctx.arc(x, 12, 4, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(x, H - 12, 4, 0, 7); ctx.fill(); }
+
+    shots.forEach((shot, i) => {
+      const c = i % cols, r = Math.floor(i / cols);
+      const x = side + c * (pw + gap), y = top + r * (ph + gap);
+      ctx.drawImage(shot, x, y, pw, ph);
+      ctx.strokeStyle = '#5a2a4d'; ctx.lineWidth = 3; ctx.strokeRect(x, y, pw, ph);
+    });
+
+    // stickers
+    ctx.font = '54px serif';
+    ctx.fillText('💖', side - 20, top + 30);
+    ctx.fillText('⭐', W - side - 36, top + ph - 10);
+    if (rows > 1) ctx.fillText('🎀', W - side - 50, top + ph + gap + 40);
+
+    // caption
+    const date = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff4fa3';
+    ctx.font = '800 56px Sniglet, sans-serif';
+    ctx.fillText('✿ sparkle snap ✿', W / 2, H - bottom + 72);
+    ctx.fillStyle = '#8f6bff';
+    ctx.font = '36px "Gochi Hand", cursive';
+    ctx.fillText(date + '  ♡  xoxo', W / 2, H - bottom + 118);
+  }
+
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.download = 'sparkle-snap.png';
+    a.href = stripCanvas.toDataURL('image/png');
+    a.click();
+  });
+
+  document.getElementById('retakeBtn').addEventListener('click', () => {
+    result.style.display = 'none';
+    booth.style.display = 'block';
+    startBtn.disabled = false;
+  });
+</script>
+</body>
+</html>
