@@ -2,13 +2,17 @@ import { photos, newId } from "../lib/shared.mjs";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
+// No booth key (owner's choice): any device that opens the booth can print.
+// Uploads are still limited to the booth page itself, to JPEGs under 5MB,
+// and are rate limited; photos auto-delete after 24 hours.
 export default async (req) => {
   if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
 
-  // Only booths that know the secret key can upload.
-  const expected = Netlify.env.get("BOOTH_KEY");
-  if (!expected || req.headers.get("x-booth-key") !== expected) {
-    return new Response("wrong booth key", { status: 401 });
+  // Browsers always send Origin on POST, so this blocks other websites
+  // from using our storage.
+  const origin = req.headers.get("origin");
+  if (!origin || origin !== new URL(req.url).origin) {
+    return new Response("uploads only from the booth", { status: 403 });
   }
 
   const data = await req.arrayBuffer();
@@ -28,4 +32,8 @@ export default async (req) => {
   return Response.json({ id, url });
 };
 
-export const config = { path: "/api/upload" };
+export const config = {
+  path: "/api/upload",
+  // A booth prints about once a minute; this stops anyone flooding the storage.
+  rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip", "domain"] },
+};

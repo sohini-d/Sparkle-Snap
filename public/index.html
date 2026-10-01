@@ -191,7 +191,7 @@
   }
   .qr-box img, .qr-box canvas { width: 100% !important; height: auto !important; }
   .qr-wait { font-family: 'Gochi Hand', cursive; font-size: 18px; }
-  .key-btn { margin-top: 10px; font-size: 15px; padding: 6px 14px; }
+  .retry-btn { margin-top: 10px; font-size: 15px; padding: 6px 14px; }
   .qr-note { font-family: 'Gochi Hand', cursive; font-size: 18px; margin-top: 10px; }
 
   footer { text-align: center; margin-top: 26px; font-family: 'Gochi Hand', cursive; font-size: 20px; position: relative; z-index: 1; }
@@ -563,29 +563,9 @@
   const qrBox = document.getElementById('qrBox');
   const qrNote = document.getElementById('qrNote');
 
-  // The booth key stops strangers from uploading to your storage.
-  // Open the booth once as  https://your-site/?key=YOUR_KEY  and it's remembered on that device.
-  // Read fresh on every print, so tabs opened before the key was saved still pick it up.
-  let memoryKey = '';
-  function saveBoothKey(key) {
-    memoryKey = key;
-    try { localStorage.setItem('boothKey', key); } catch (e) {}
-  }
-  function boothKey() {
-    try { return localStorage.getItem('boothKey') || memoryKey; } catch (e) { return memoryKey; }
-  }
-  const urlKey = new URLSearchParams(location.search).get('key');
-  if (urlKey) {
-    saveBoothKey(urlKey.trim());
-    history.replaceState(null, '', location.pathname);
-  }
-
-  function askForBoothKey() {
-    const key = (prompt('Booth host: enter the booth key 🔑') || '').trim();
-    if (!key) return;
-    saveBoothKey(key);
-    uploadAndShowQr();
-  }
+  // Old booth-key links (?key=...) no longer do anything; tidy the address bar.
+  if (location.search) history.replaceState(null, '', location.pathname);
+  try { localStorage.removeItem('boothKey'); } catch (e) {}
 
   let guestSession = 0;
 
@@ -596,8 +576,7 @@
     try {
       let blob = await new Promise(r => stripCanvas.toBlob(r, 'image/jpeg', 0.9));
       if (blob.size > 4.5 * 1024 * 1024) blob = await new Promise(r => stripCanvas.toBlob(r, 'image/jpeg', 0.75));
-      const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'X-Booth-Key': boothKey() }, body: blob });
-      if (res.status === 401) throw new Error('no-key');
+      const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
       if (!res.ok) throw new Error(await res.text());
       const { url } = await res.json();
       if (mySession !== guestSession) return; // screen was cleared meanwhile
@@ -606,15 +585,9 @@
       qrBox.title = url;
     } catch (err) {
       if (mySession !== guestSession) return;
-      if (err.message === 'no-key') {
-        // This device was never set up as a booth (or has the wrong key).
-        qrBox.innerHTML = '<span class="qr-wait">🔑 booth not set up<br><button class="pill key-btn" type="button">enter booth key</button></span>';
-        qrBox.querySelector('.key-btn').addEventListener('click', askForBoothKey);
-        qrNote.textContent = 'host only ~ you only need to do this once ♡';
-      } else {
-        qrBox.innerHTML = '<span class="qr-wait">🥺 couldn\'t make a code</span>';
-        qrNote.textContent = navigator.onLine ? 'ask the booth host for help ♡' : 'no internet ~ check the wi-fi ♡';
-      }
+      qrBox.innerHTML = '<span class="qr-wait">🥺 couldn\'t make a code<br><button class="pill retry-btn" type="button">try again</button></span>';
+      qrBox.querySelector('.retry-btn').addEventListener('click', uploadAndShowQr);
+      qrNote.textContent = navigator.onLine ? 'tap try again ♡' : 'no internet ~ check the wi-fi ♡';
     }
   }
 

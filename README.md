@@ -12,13 +12,13 @@ Guests pick 2, 4 or 6 photos, a 3, 5 or 10 second timer, and a look (a filter or
 - **Frames:** sparkle, classic white, classic black, instant prints, film strip, gingham, holo. Chosen *after* shooting, with a live preview
 - **QR download:** each print gets a random, unguessable link. There's no gallery or listing
 - **Privacy:** photos auto-delete after 24 hours, and the booth screen wipes itself after each guest
-- **Booth key:** only booths holding the secret key can upload
+- **No setup:** any device that opens the site works as a booth. Uploads are only accepted from the booth page itself, must be JPEGs under 5MB, and are rate limited
 
 ## Project layout
 
 ```
 public/index.html             the booth (camera, looks, frames, QR)
-netlify/functions/upload.mjs  POST /api/upload (needs the booth key)
+netlify/functions/upload.mjs  POST /api/upload (booth page only, rate limited)
 netlify/functions/photo-page.mjs  GET /p/:id, the guest download page
 netlify/functions/photo.mjs   GET /photos/:id, the image itself
 netlify/functions/cleanup.mjs hourly job that deletes photos older than 24h
@@ -34,11 +34,9 @@ Photos are stored in [Netlify Blobs](https://docs.netlify.com/blobs/overview/).
 npm install
 ```
 
-Create a `.env` file (never commit it):
+Optional: so phones on the same Wi-Fi can open QR links while testing, create a `.env` file (never commit it):
 
 ```
-BOOTH_KEY=any-local-test-key
-# optional: lets phones on the same Wi-Fi open QR links
 PUBLIC_BASE_URL=http://<your-computer-ip>:8888
 ```
 
@@ -46,15 +44,8 @@ PUBLIC_BASE_URL=http://<your-computer-ip>:8888
 npx netlify dev
 ```
 
-Open `http://localhost:8888/?key=any-local-test-key` once and the key is remembered on that device.
+Then open `http://localhost:8888`.
 
 ## Deploy
 
-```bash
-npx netlify env:set BOOTH_KEY "<a long random secret>" --secret
-npx netlify deploy --prod
-```
-
-On each booth device, open `https://<your-site>/?key=<the secret>` once.
-
-> **Keep the booth key secret.** It's stored in Netlify's environment settings, never in this repository.
+Netlify is connected to this repository, so every push to `main` deploys automatically.
