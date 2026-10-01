@@ -589,6 +589,7 @@
       let blob = await new Promise(r => stripCanvas.toBlob(r, 'image/jpeg', 0.9));
       if (blob.size > 4.5 * 1024 * 1024) blob = await new Promise(r => stripCanvas.toBlob(r, 'image/jpeg', 0.75));
       const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'X-Booth-Key': BOOTH_KEY }, body: blob });
+      if (res.status === 401) throw new Error('no-key');
       if (!res.ok) throw new Error(await res.text());
       const { url } = await res.json();
       if (mySession !== guestSession) return; // screen was cleared meanwhile
@@ -597,8 +598,14 @@
       qrBox.title = url;
     } catch (err) {
       if (mySession !== guestSession) return;
-      qrBox.innerHTML = '<span class="qr-wait">🥺 couldn\'t make a code</span>';
-      qrNote.textContent = 'ask the booth host for help ♡';
+      if (err.message === 'no-key') {
+        // This device was never set up as a booth (or has the wrong key).
+        qrBox.innerHTML = '<span class="qr-wait">🔑 booth not set up</span>';
+        qrNote.textContent = 'host: open this page once with ?key=YOUR_BOOTH_KEY';
+      } else {
+        qrBox.innerHTML = '<span class="qr-wait">🥺 couldn\'t make a code</span>';
+        qrNote.textContent = navigator.onLine ? 'ask the booth host for help ♡' : 'no internet ~ check the wi-fi ♡';
+      }
     }
   }
 
